@@ -1,4 +1,6 @@
 # firebase-appengine-video-encoding
+Firebase test project: 
+testing-video-slices
 
 FYI: Google heeft een pagina speciaal voor video encoding/transcoding maar staat ‘contact sales’.
 https://cloud.google.com/solutions/media-entertainment/use-cases/video-encoding-transcoding/
