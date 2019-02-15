@@ -1,4 +1,5 @@
 # Status 15-02-19
+*See learnings in # Day 2*
 
 - Deleting a file from the storage by firing a Firebase function (locally) works. 
 
