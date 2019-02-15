@@ -1,3 +1,4 @@
+
 # Copyright 2015-2016, Google, Inc.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: nodejs8
+runtime: nodejs10
 
-# [START gae_flex_pubsub_yaml]
+# [START gae_pubsub_yaml]
 env_variables:
-  PUBSUB_TOPIC: 'encode-video'
+  PUBSUB_TOPIC: encode-video-2
   # This token is used to verify that requests originate from your
   # application. It can be any sufficiently random string.
-  
-  PUBSUB_VERIFICATION_TOKEN: 'randomTokenForYouTodayIsSpecial'
-# [END gae_flex_pubsub_yaml]
+  PUBSUB_VERIFICATION_TOKEN: randomTokenForYouTodayIsSpecial
+# [END gae_pubsub_yaml]
