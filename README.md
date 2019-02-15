@@ -2,6 +2,13 @@
 
 - Deleting a file from the storage by firing a Firebase function (locally) works. 
 
+To test:
+1. upload a Neo.svg to https://console.firebase.google.com/project/testing-video-slices/storage/testing-video-slices.appspot.com/files
+
+2. In terminal, navigate to this repo. Run `firebase functions:shell` and execute `handleNewStorageFile()`.
+
+3. The 'Neo.svg' is no longer in the storage.
+
 ## To do
 
 ### Firebase function
