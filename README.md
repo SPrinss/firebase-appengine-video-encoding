@@ -1,3 +1,29 @@
+# Status 15-02-19
+*See learnings in # Day 2*
+
+- Deleting a file from the storage by firing a Firebase function (locally) works. 
+
+To test:
+1. upload a Neo.svg to https://console.firebase.google.com/project/testing-video-slices/storage/testing-video-slices.appspot.com/files
+
+2. In terminal, navigate to this repo. Run `firebase functions:shell` and execute `handleNewStorageFile()`.
+
+3. The 'Neo.svg' is no longer in the storage.
+
+## To do
+
+### Firebase function
+- Send File name with PubSub call
+- Modify/update meta information changed function
+
+### Appengine endpoint
+- Parse req.body to get the correct file path
+- Download Storage file to filesystem (only 'tmp' is writable)
+- Run encoder
+- Store/overwrite encoded file 
+- Somehow update slices story db information. (for example by updating meta information of storage file)
+
+
 # firebase-appengine-video-encoding
 Firebase test project: 
 testing-video-slices
@@ -44,3 +70,46 @@ https://github.com/GoogleCloudPlatform/nodejs-docs-samples/tree/master/appengine
 Firebase: 
 npm install --save @google-cloud/pubsub
 npm install --save @google-cloud/storage
+
+
+# Day 2
+
+## PubSub
+Je hebt een topic waar je een pubsub message heen stuurt.
+Een topic kan meerdere subscribers hebben. Subscribers kunnen zelf pullen, of de pubsub kan naar ze pushen. 
+
+Als je voor push kiest kan je een subscriber aannaken met een endpoint. De pubsub server zal dan een post request maken naar dat endpoint totdat de endpoint server een HTTP success status code terugstuurt of de deadline verstreken is. 
+
+Select gcloud project id: gcloud config set project [projectId]
+
+Deploy app:
+- gcloud app deploy app.standard.yaml (or app.yaml)
+
+Om een nieuw topic aan te maken:
+gcloud pubsub topics create YOUR_TOPIC_NAME
+
+Om een nieuwe subscription aan te maken
+gcloud pubsub subscriptions create YOUR_SUBSCRIPTION_NAME \
+    --topic YOUR_TOPIC_NAME \
+    --push-endpoint \
+    https://YOUR_PROJECT_ID.appspot.com/pubsub/push?token=YOUR_TOKEN \
+    --ack-deadline 10
+*Pubsub/push is just an example.*
+
+## Consoles
+
+https://console.cloud.google.com/logs/viewer
+appEngine -> Stackdriver -> logs viewer see calls to app and the http response
+
+https://console.cloud.google.com/errors
+App-engine -> stack driver -> error reporting -> see errors within app
+
+console.cloud.google.com/cloudpubsub/
+See topics. Delete subscriptions. etc.
+
+## Note about NodeJs Storage
+
+Bucket name is including .appspot.com
+
+
+
