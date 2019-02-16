@@ -4,6 +4,7 @@
 const express = require('express');
 const path = require('path');
 const process = require('process'); // Required for mocking environment variables
+const fs = require('fs'); 
 
 const {Storage} = require('@google-cloud/storage');
 const projectId = 'testing-video-slices';
@@ -27,12 +28,33 @@ app.post('/encode/video', async (req, res) => {
 
   try {
 
-    await storage
+    const file = await storage
     .bucket(bucketName)
-    .file('Neo.svg')
-    .delete();
+    .file('Neo.svg');
+
+    // Array response with 0 The File metadata, 1 The full API response.
+    const [metaData] = await file.getMetadata();
+    if(metaData.encoded == true) return res.status(200).send();
+
+    const newFile = await storage
+    .bucket(bucketName)
+    .file('Neo-copy-2.svg');    
     
+    await file.download({destination: '/tmp/tempFile'})
+   
+    await newFile.save('tmp/tempFile', {
+      metadata: {
+        contentType: 'image/jpeg',
+        metadata: {
+          custom: 'metadata',
+          encoded: true
+        }
+      },
+        resumable: false
+      });
+
     res.status(200).send();
+  
   } catch(error) {
     res.status(505).send(error);
 
