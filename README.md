@@ -111,5 +111,8 @@ See topics. Delete subscriptions. etc.
 
 Bucket name is including .appspot.com
 
+# Day 3
 
+Might be good to use the endpoint `_ah/push-handlers/myhandler`.
+https://cloud.google.com/pubsub/docs/push ->  App Engine Standard Endpoints
 
