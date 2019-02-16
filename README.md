@@ -116,3 +116,16 @@ Bucket name is including .appspot.com
 Might be good to use the endpoint `_ah/push-handlers/myhandler`.
 https://cloud.google.com/pubsub/docs/push ->  App Engine Standard Endpoints
 
+Pubsub publishes using `Buffer` data. 
+
+I.e. 
+`
+const data = JSON.stringify({ name: filePath, bucket: fileBucket });
+
+const dataBuffer = Buffer.from(data);
+
+const messageId = await pubsub.topic(topicName).publish(dataBuffer);
+`
+
+If the pubsub subscriber uses the push method, the endpoint will receive a POST request.
+I don't know how to get the JSON from the req.body Buffer data.
