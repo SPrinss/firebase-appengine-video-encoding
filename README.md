@@ -111,5 +111,37 @@ See topics. Delete subscriptions. etc.
 
 Bucket name is including .appspot.com
 
+# Day 3
+
+Might be good to use the endpoint `_ah/push-handlers/myhandler`.
+https://cloud.google.com/pubsub/docs/push ->  App Engine Standard Endpoints
+
+Pubsub publishes using `Buffer` data. 
+
+I.e. 
+```
+const data = JSON.stringify({ name: filePath, bucket: fileBucket });
+
+const dataBuffer = Buffer.from(data);
+
+const messageId = await pubsub.topic(topicName).publish(dataBuffer);
+```
+
+If the pubsub subscriber uses the push method, the endpoint will receive a POST request.
+I don't know how to get the JSON from the req.body Buffer data.
 
 
+## Running more than one service
+
+See article: 
+https://medium.com/this-dot-labs/node-js-microservices-on-google-app-engine-b1193497fb4b
+
+Instances can have different scaling (and timeouts).
+https://cloud.google.com/appengine/docs/standard/python/how-instances-are-managed#instance_scaling
+
+For the 'worker' we'll probably need a longer timeout. 
+```How will we respond quickly to the pubsub, but remain the long timeout of the 'worker'?```
+
+## Storage 
+
+Information on NodeJs Storage storage.bucket().file() https://cloud.google.com/nodejs/docs/reference/storage/2.3.x/File
