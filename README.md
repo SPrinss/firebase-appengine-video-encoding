@@ -6,15 +6,16 @@
 To test:
 1. upload a Neo.svg to https://console.firebase.google.com/project/testing-video-slices/storage/testing-video-slices.appspot.com/files
 
-2. In terminal, navigate to this repo. Run `firebase functions:shell` and execute `handleNewStorageFile()`.
+2. In terminal, navigate to this repo. Run `firebase functions:shell` and execute `handleNewStorageFile()`. Or run locally by running curl -H "Content-Type: application/json" -i --data @sample_message.json "http://localhost:8080/encode/video?token=randomTokenForYouTodayIsSpecial" in the repo's main folder.
 
-3. The 'Neo.svg' is no longer in the storage.
+3. The 'Neo.svg' is copied into `Neo-copy-2.svg` (except it's 12bytes so something is going wrong...
 
 ## To do
 
-### Firebase function
-- Send File name with PubSub call
-- Modify/update meta information changed function
+- Fix download -> upload (new file is now 12b?!)
+- Parse req.body to get the correct file path
+- implement encoder
+- set instance's timeout (automatic scaling has a timeout of 60s)
 
 ### Appengine endpoint
 - Parse req.body to get the correct file path
