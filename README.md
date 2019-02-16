@@ -146,3 +146,6 @@ For the 'worker' we'll probably need a longer timeout.
 ## Storage 
 
 Information on NodeJs Storage storage.bucket().file() https://cloud.google.com/nodejs/docs/reference/storage/2.3.x/File
+
+App engine file system, only '/tmp' is writable
+https://cloud.google.com/appengine/docs/standard/nodejs/runtime?hl=en&refresh=1
