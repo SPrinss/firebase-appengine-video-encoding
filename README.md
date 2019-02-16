@@ -129,3 +129,15 @@ const messageId = await pubsub.topic(topicName).publish(dataBuffer);
 
 If the pubsub subscriber uses the push method, the endpoint will receive a POST request.
 I don't know how to get the JSON from the req.body Buffer data.
+
+
+## Running more than one service
+
+See article: 
+https://medium.com/this-dot-labs/node-js-microservices-on-google-app-engine-b1193497fb4b
+
+Instances can have different scaling (and timeouts).
+https://cloud.google.com/appengine/docs/standard/python/how-instances-are-managed#instance_scaling
+
+For the 'worker' we'll probably need a longer timeout. 
+```How will we respond quickly to the pubsub, but remain the long timeout of the 'worker'?```
