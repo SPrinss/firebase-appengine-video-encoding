@@ -141,3 +141,7 @@ https://cloud.google.com/appengine/docs/standard/python/how-instances-are-manage
 
 For the 'worker' we'll probably need a longer timeout. 
 ```How will we respond quickly to the pubsub, but remain the long timeout of the 'worker'?```
+
+## Storage 
+
+Information on NodeJs Storage storage.bucket().file() https://cloud.google.com/nodejs/docs/reference/storage/2.3.x/File
