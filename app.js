@@ -35,16 +35,12 @@ app.post('/encode/video', jsonBodyParser,  async (req, res) => {
     );
     var obj = JSON.parse(message);
 
-    console.log('message name: ', obj.name)
-
-    // var str = req.body.message.data.toString('utf8');
-
     
-    // const file = await storage
-    // .bucket(bucketName)
-    // .file(obj.name);
+    const file = await storage
+    .bucket(bucketName)
+    .file(obj.name);
 
-    // await file.copy('new-copy-buffer-test');
+    await file.copy('new-copy-buffer-test');
 
     // // Array response with 0 The File metadata, 1 The full API response.
     // const [metaData] = await file.getMetadata();
