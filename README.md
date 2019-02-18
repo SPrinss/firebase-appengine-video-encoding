@@ -149,3 +149,29 @@ Information on NodeJs Storage storage.bucket().file() https://cloud.google.com/n
 
 App engine file system, only '/tmp' is writable
 https://cloud.google.com/appengine/docs/standard/nodejs/runtime?hl=en&refresh=1
+
+# Questions day 4
+
+### Buffer
+
+1. Is in res or req?
+    - Search example?
+    - PubSub push documentation / NodeJs topic.publish documentation
+
+2. Raw data for parser?
+3. Stream? (So capture parts in a buffer and listen to on ‘end’/‘finish’ event? )
+4. If binaire data -> JSON.parse(data.toString()) to get the object?
+
+
+### Download
+
+- Can write to /tmp ? (console.log file?)
+- Do we want download or readStream?
+
+### Instances
+
+- Default instance & ‘worker’ instance. Default acknowledges POST and calls ‘worker’
+- Scaling on manual instance config?
+
+
+
