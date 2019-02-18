@@ -4,8 +4,8 @@ const {PubSub} = require('@google-cloud/pubsub');
 const projectId = 'test-video-slices'
 
 exports.handleNewStorageFile = functions.storage.object().onFinalize(async (object) => {
-  const fileBucket = object.bucket; // The Storage bucket that contains the file.
-  const filePath = object.name; // File path in the bucket.
+  const fileBucket = 'test'; // The Storage bucket that contains the file.
+  const filePath = 'Neo.svg'; // File path in the bucket.
   const contentType = object.contentType; // File content type.
 
   // TODO check video
