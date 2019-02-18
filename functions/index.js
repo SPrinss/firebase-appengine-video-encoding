@@ -4,7 +4,7 @@ const {PubSub} = require('@google-cloud/pubsub');
 const projectId = 'test-video-slices'
 
 exports.handleNewStorageFile = functions.storage.object().onFinalize(async (object) => {
-  const fileBucket = 'test'; // The Storage bucket that contains the file.
+  const fileBucket = 'testing-video-slices.appspot.com'; // The Storage bucket that contains the file.
   const filePath = 'Neo.svg'; // File path in the bucket.
   const contentType = object.contentType; // File content type.
 
@@ -12,7 +12,7 @@ exports.handleNewStorageFile = functions.storage.object().onFinalize(async (obje
   // if(contentType )
   const pubsub = new PubSub();
   const topicName = 'encode-video-2';
-  const data = JSON.stringify({ name: filePath, bucket: fileBucket });
+  const data = JSON.stringify({ name: filePath, bucket: fileBucket, projectId: projectId});
 
   const dataBuffer = Buffer.from(data);
 

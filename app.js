@@ -3,14 +3,13 @@
 
 const express = require('express');
 const path = require('path');
-const bodyParser = require('body-parser');
 const process = require('process'); // Required for mocking environment variables
 const fs = require('fs'); 
 const Buffer = require('safe-buffer').Buffer;
+const bodyParser = require('body-parser');
+
 const {Storage} = require('@google-cloud/storage');
-const projectId = 'testing-video-slices';
-const storage = new Storage({projectId: projectId});
-const bucketName = 'testing-video-slices.appspot.com';
+
 const jsonBodyParser = bodyParser.json();
 
 const app = express();
@@ -18,27 +17,30 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
 
-app.get('/', (req, res) => {
-  res.render('index', {messages: messages});
-});
+
+// The following environment variables are set by app.yaml when running on GAE,
+// but will need to be manually set when running locally.
+const PUBSUB_VERIFICATION_TOKEN = process.env.PUBSUB_VERIFICATION_TOKEN;
+const TOPIC = process.env.PUBSUB_TOPIC;
+
 
 app.post('/encode/video', jsonBodyParser,  async (req, res) => {
-  // if (req.query.token !== PUBSUB_VERIFICATION_TOKEN) {
-  //   res.status(400).send();
-  //   return;
-  // }
+  console.log(PUBSUB_VERIFICATION_TOKEN)
+  if (req.query.token !== PUBSUB_VERIFICATION_TOKEN) {
+    res.status(400).send();
+    return;
+  }
 
   try {
     
-    const message = Buffer.from(req.body.message.data, 'base64').toString(
-      'utf-8'
-    );
-    var obj = JSON.parse(message);
+    const messageData = Buffer.from(req.body.message.data, 'base64').toString();
+    var messageDataObj = JSON.parse(messageData);
 
-    
+    const storage = new Storage({projectId: messageDataObj.projectId});
+
     const file = await storage
-    .bucket(bucketName)
-    .file(obj.name);
+    .bucket(messageDataObj.bucket)
+    .file(messageDataObj.name);
 
     await file.copy('new-copy-buffer-test');
 
@@ -66,7 +68,8 @@ app.post('/encode/video', jsonBodyParser,  async (req, res) => {
     res.status(200).send();
   
   } catch(error) {
-    res.status(505).send({error: error});
+    console.error(error);
+    res.status(500).send();
 
   }
 });
