@@ -165,3 +165,8 @@ For example:
     service: static-backend
 ```
 
+# Day 5
+
+How to deploy [multiple instances](https://medium.com/this-dot-labs/node-js-microservices-on-google-app-engine-b1193497fb4b) with NodeJs.
+
+The [instance](https://cloud.google.com/appengine/docs/standard/nodejs/how-instances-are-managed) type can be set in [app.yaml](https://cloud.google.com/appengine/docs/standard/nodejs/config/appref).
