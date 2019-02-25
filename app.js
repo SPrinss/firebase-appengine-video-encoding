@@ -13,6 +13,7 @@ const {PubSub} = require('@google-cloud/pubsub');
 
 const pubsubListener = new PubSub();
 
+// TODO: Create env variables
 const workerTopicName = 'worker-topic-encode';
 const workerSubscriptionName = 'worker-encode';
 const pubsubWorkerTopic = pubsubListener.topic(workerTopicName);
@@ -21,17 +22,32 @@ const workerSubscription = pubsubWorkerTopic.subscription(workerSubscriptionName
 
 const app = express();
 
+const messages = [];
+
+// TODO app.get('/_ah/start'...., the server (re)boots. -> Get all messages from subscription and handle each message.
+
+
 workerSubscription.on('message', (message) => {
   const messageData = Buffer.from(message.data, 'base64').toString();
   var messageDataObj = JSON.parse(messageData);
 
   console.log('filename ', messageDataObj.name)
-  message.ack();
-
-  // TODO make POST call to /encode
-  // while not receive finished status push the ack deadline of the message.
-  // on finished  message.ack();
-
+  
+  // If the message is new or hasn't been handled fully yet...
+  // TODO: What if worker is still encoding and workerSubscription is triggered? Add type = 'handling' ?
+  if(messageDataObj.type == 'new') {
+    // Make POST call to '/encode' with messageDataObj
+      messages.push(messageDataObj);
+  }
+  // If message type is finished, the message is sent from the worker (basic instance: encoding). 
+  // In the payload of the message, the id of the message that triggered the POST call to the worker is added.
+  // We use this id to acknowledge the message (removing it from the pubsub).
+  // We should also acknowledge the message that is sent from the worker.
+  else if (messageDataObj.type == 'finished') {
+    const idOfFinishedMessage = messageDataObj.finishedMessageId;
+  } else {
+    console.warn('Unkown message type :', messageDataObj.id)
+  }
   
 
   // message.id = ID of the message.
