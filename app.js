@@ -11,13 +11,17 @@ const bodyParser = require('body-parser');
 const {Storage} = require('@google-cloud/storage');
 
 const {PubSub} = require('@google-cloud/pubsub');
+const topicName = 'worker-topic-encode';
 
-const pubsub = new PubSub();
+const pubsubPublisher = new PubSub();
+const pubsubListener = new PubSub();
+
+const publisher = pubsubPublisher.topic(topicName).publisher();
 
 const workerTopicName = 'worker-topic-encode';
 const workerSubscriptionName = 'worker-encode';
 
-const pubsubWorkerTopic = pubsub.topic(workerTopicName);
+const pubsubWorkerTopic = pubsubListener.topic(workerTopicName);
 const workerSubscription = pubsubWorkerTopic.subscription(workerSubscriptionName);
 
 const jsonBodyParser = bodyParser.json();
@@ -38,23 +42,22 @@ app.get('/', (req, res) => {
 
 
 app.post('/add-video-to-encode-queue', jsonBodyParser,  async (req, res) => {
-  if (req.query.token !== PUBSUB_VERIFICATION_TOKEN) {
-    res.status(400).send();
-    return;
-  }
+  // if (req.query.token !== PUBSUB_VERIFICATION_TOKEN) {
+  //   res.status(400).send();
+  //   return;
+  // }
 
   try {
     const fileBucket = 'testing-video-slices.appspot.com'; // The Storage bucket that contains the file.
     const filePath = 'Neo.svg'; // File path in the bucket.
-  
-    // TODO check video
-    const data = JSON.stringify({ name: filePath, bucket: fileBucket});
-    const dataBuffer = Buffer.from(data);
-    
-    const messageId = await pubsubWorkerTopic.publish(dataBuffer);
-    console.log(messageId)
-    res.status(200).send();
 
+    const data = JSON.stringify({ name: filePath, bucket: fileBucket});
+  
+    const dataBuffer = Buffer.from(data);
+  
+    const messageId = await publisher.publish(dataBuffer);
+    
+    res.status(200).send();
   } catch(error) {
     res.status(500).send(error);
   }
