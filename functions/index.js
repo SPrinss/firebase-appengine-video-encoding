@@ -1,31 +1,38 @@
+/*
+Import Dependencies
+*/
 const functions = require('firebase-functions');
 const {PubSub} = require('@google-cloud/pubsub');
 
-const projectId = 'test-video-slices'
+/*
+Init
+*/
+const projectId = 'test-video-slices';
+const storageBucket = 'testing-video-slices.appspot.com'; // The Storage bucket that contains the file.
+const pubsub = new PubSub();
+const topicName = 'encode-video-3';
 
-exports.handleNewStorageFile = functions.storage.object().onFinalize(async (object) => {
-  const fileBucket = 'testing-video-slices.appspot.com'; // The Storage bucket that contains the file.
-  const filePath = 'Neo.svg'; // File path in the bucket.
-  const contentType = object.contentType; // File content type.
+/*
+Storage Upload Handler
+*/
+async function handleFileUpload(object) {
+  switch(object.contentType) {
+    
+    case 'audio/mp3':
+    case 'video/mp4':
+      const data = JSON.stringify({ name: 'Neo.svg', bucket: storageBucket, projectId: projectId});
+      const dataBuffer = Buffer.from(data);
+      const messageId = await pubsub.topic(topicName).publish(dataBuffer);
+      console.log(`Published ${messageId}, mime type = ${object.contentType}.`);
+      break;
 
-  // TODO check if type is video
-  // if(contentType )
-  const pubsub = new PubSub();
-  const topicName = 'encode-video-3';
-  const data = JSON.stringify({ name: filePath, bucket: fileBucket, projectId: projectId});
+    default:
+      console.info(`Ignoring file with mime type ${object.contentType}.`);
+      break;
+  }
+}
 
-  const dataBuffer = Buffer.from(data);
-
-  // TODO publish to a topic with pull subscriptions... not push.
-  const messageId = await pubsub.topic(topicName).publish(dataBuffer);
-  console.log(`Message ${messageId} published.`);
-  
-})
-
-// exports.handleMetaUpdateStorageFile = functions.storage.object().onMetadataUpdate((object) => {
-//   console.log('meta update')
-// })
-
-// exports.handleVideoEncoded = functions.pubsub.topic('video-encoded').onPublish((message, context) => {
-//   console.log('video encoded', message.json['whateverObjPath'], context['timestamp'] + ' might exist')
-// });
+/*
+Export
+*/
+exports.handleNewStorageFile = functions.storage.object().onFinalize(handleFileUpload);
