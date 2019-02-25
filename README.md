@@ -188,9 +188,19 @@ So, we don't have to do anything with the `/_ah/start` endpoint and can create o
  ### So...
  
 We create a seperate instance in `/encode` which is an automatically scaling basic service (B2).  
-Firebase functions calls are handled in the default service which makes a POST to `/encode/video`. In the dispatch.yaml file we reroute `/encode/video/*` to the `encode` service.
+Firebase functions calls are handled in the default service which publishes to another PubSub topic ('worker-encode') and acknowledges the original message. The default server (which is always live) listens to messages pushed to 'worker-encode' and on a new message makes a POST to `/encode/video`. In the dispatch.yaml file we reroute `/encode/video/*` to the `encode` service.
+The 'messageHandler' will postpone the message acknowledge deadline while the background task is running. On finished, the message is finally acknowledged.
 
-Since this is a basic service, there is a 24h timeout. 
+```
+ Firebase function -> PubSub publish -> AppEngine post endpoint -> publish new topic -> res.status(200)
+
+Listener to new topic -> on message -> set message ‘handling’ ->  make call to /encode (handled in the basic instance) -> wait for response ->  message succes/failure
+```
+Questions: 
+- how to push ack deadline in default endpoint during handling?
+- how to make a post request and wait for the response (which might take 20+ minutes)?
+
+
 
 Questions:
 - Max instances enough for X amount of video's?
