@@ -11,16 +11,17 @@ const {PubSub} = require('@google-cloud/pubsub');
 /*
 Init
 */
+const messages = new Map(); //A Map is very handy here because we don't like duplicate values
 const pubsubListener = new PubSub();
 const pubsubWorkerTopic = pubsubListener.topic(process.env.TOPIC || 'worker-topic-encode');
 const workerSubscription = pubsubWorkerTopic.subscription(process.env.SUBSCRIPTION || 'worker-encode');
-const messages = new Map(); //A Map is very handy here because we don't like duplicate values
+workerSubscription.on('message', handleReceivedMessage);
 
 // TODO app.get('/_ah/start'...., the server (re)boots. -> Get all messages from subscription and handle each message.
 
-workerSubscription.on('message', (message) => {
+function handleReceivedMessage(message) {
   
-  const messageData = JSON.parse(Buffer.from(message.data, 'base64').toString());
+  const messageData = parseMessageToJSON(message)
   console.info('receiving message', messageData);
   /*
   message.id = ID of the message.
@@ -55,7 +56,13 @@ workerSubscription.on('message', (message) => {
       break;
   }
 
-})
+}
+
+function parseMessageToJSON(message) {
+  var data = Buffer.from(message.data, 'base64').toString();
+  var json = JSON.parse(data);
+  return json;
+}
 
 /*
 Create & Start Express Web Server
