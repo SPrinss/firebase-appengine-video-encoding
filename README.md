@@ -169,4 +169,30 @@ For example:
 
 How to deploy [multiple instances](https://medium.com/this-dot-labs/node-js-microservices-on-google-app-engine-b1193497fb4b) with NodeJs.
 
-The [instance](https://cloud.google.com/appengine/docs/standard/nodejs/how-instances-are-managed) type can be set in [app.yaml](https://cloud.google.com/appengine/docs/standard/nodejs/config/appref).
+The [instance](https://cloud.google.com/appengine/docs/standard/nodejs/how-instances-are-managed) [class type](https://cloud.google.com/appengine/docs/standard/#instance_classes) can be set in [app.yaml](https://cloud.google.com/appengine/docs/standard/nodejs/config/appref).
+
+So, we create a new basic service in `/encode`.
+
+```
+Each service instance is created in response to a start request, which is an empty HTTP GET request to /_ah/start. App Engine sends this request to bring an instance into existence; users cannot send a request to /_ah/start.
+The start request can be used for two purposes:
+
+    To start a program that runs indefinitely, without accepting further requests.
+    To initialize an instance before it receives additional traffic.
+
+When you start an instance of a basic scaling service, App Engine allows it to accept traffic, but the /_ah/start request is not sent to an instance until it receives its first user request    
+```
+
+So, we don't have to do anything with the `/_ah/start` endpoint and can create our own endpoints.
+
+ ### So...
+ 
+We create a seperate instance in `/encode` which is an automatically scaling basic service (B2).  
+Firebase functions calls are handled in the default service which makes a POST to `/encode/video`. In the dispatch.yaml file we reroute `/encode/video/*` to the `encode` service.
+
+Since this is a basic service, there is a 24h timeout. 
+
+Questions:
+- Max instances enough for X amount of video's?
+- How to call the basic service (`encode`) from the default service? -> PubSub frequency?
+- 
