@@ -194,5 +194,5 @@ Since this is a basic service, there is a 24h timeout.
 
 Questions:
 - Max instances enough for X amount of video's?
-- How to call the basic service (`encode`) from the default service? -> PubSub frequency?
+- How to call the basic service (`encode`) from the default service? -> [PubSub for long running tasks](https://cloud.google.com/solutions/using-cloud-pub-sub-long-running-tasks)
 - 
