@@ -1,5 +1,5 @@
 {
-  "name": "video-encode-appengine",
+  "name": "media-encoder-appengine",
   "description": "Node.js Google Cloud PubSub sample for Google App Engine",
   "version": "0.0.1",
   "private": true,
