@@ -10,6 +10,16 @@ const bodyParser = require('body-parser');
 
 const {Storage} = require('@google-cloud/storage');
 
+const {PubSub} = require('@google-cloud/pubsub');
+
+const pubsub = new PubSub();
+
+const workerTopicName = 'worker-topic-encode';
+const workerSubscriptionName = 'worker-encode';
+
+const pubsubWorkerTopic = pubsub.topic(workerTopicName);
+const workerSubscription = pubsubWorkerTopic.subscription(workerSubscriptionName);
+
 const jsonBodyParser = bodyParser.json();
 
 const app = express();
@@ -17,62 +27,58 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
 
-
 // The following environment variables are set by app.yaml when running on GAE,
 // but will need to be manually set when running locally.
 const PUBSUB_VERIFICATION_TOKEN = process.env.PUBSUB_VERIFICATION_TOKEN;
 const TOPIC = process.env.PUBSUB_TOPIC;
 
+app.get('/', (req, res) => {    
+  res.status(200).send('Hello world');
+});
 
-app.post('/encode/video', jsonBodyParser,  async (req, res) => {
-  console.log(PUBSUB_VERIFICATION_TOKEN)
+
+app.post('/add-video-to-encode-queue', jsonBodyParser,  async (req, res) => {
   if (req.query.token !== PUBSUB_VERIFICATION_TOKEN) {
     res.status(400).send();
     return;
   }
 
   try {
-    
-    const messageData = Buffer.from(req.body.message.data, 'base64').toString();
-    var messageDataObj = JSON.parse(messageData);
-
-    const storage = new Storage({projectId: messageDataObj.projectId});
-
-    const file = await storage
-    .bucket(messageDataObj.bucket)
-    .file(messageDataObj.name);
-
-    await file.copy('new-copy-buffer-test');
-
-    // // Array response with 0 The File metadata, 1 The full API response.
-    // const [metaData] = await file.getMetadata();
-    // if(metaData.encoded == true) return res.status(200).send();
-
-    // const newFile = await storage
-    // .bucket(bucketName)
-    // .file('Neo-copy-2.svg');    
-    
-    // await file.download({destination: '/tmp/tempFile'})
-   
-    // await newFile.save('tmp/tempFile', {
-    //   metadata: {
-    //     contentType: 'image/jpeg',
-    //     metadata: {
-    //       custom: 'metadata',
-    //       encoded: true
-    //     }
-    //   },
-    //     resumable: false
-    //   });
-
-    res.status(200).send();
+    const fileBucket = 'testing-video-slices.appspot.com'; // The Storage bucket that contains the file.
+    const filePath = 'Neo.svg'; // File path in the bucket.
   
-  } catch(error) {
-    console.error(error);
-    res.status(500).send();
+    // TODO check video
+    const data = JSON.stringify({ name: filePath, bucket: fileBucket});
+    const dataBuffer = Buffer.from(data);
+    
+    const messageId = await pubsubWorkerTopic.publish(dataBuffer);
+    console.log(messageId)
+    res.status(200).send();
 
+  } catch(error) {
+    res.status(500).send(error);
   }
 });
+
+workerSubscription.on('message', (message) => {
+  const messageData = Buffer.from(message.data, 'base64').toString();
+  var messageDataObj = JSON.parse(messageData);
+
+  console.log('filename ', messageDataObj.name)
+  message.ack();
+
+  // TODO make POST call to /encode
+  // while not receive finished status push the ack deadline of the message.
+  // on finished  message.ack();
+
+  
+
+  // message.id = ID of the message.
+  // message.ackId = ID used to acknowledge the message receival.
+  // message.data = Contents of the message.
+  // message.attributes = Attributes of the message.
+  // message.publishTime = Timestamp when Pub/Sub received the message
+})
 
 // Start the server
 const PORT = process.env.PORT || 8080;

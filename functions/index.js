@@ -11,7 +11,7 @@ exports.handleNewStorageFile = functions.storage.object().onFinalize(async (obje
   // TODO check video
   // if(contentType )
   const pubsub = new PubSub();
-  const topicName = 'encode-video-2';
+  const topicName = 'encode-video-3';
   const data = JSON.stringify({ name: filePath, bucket: fileBucket, projectId: projectId});
 
   const dataBuffer = Buffer.from(data);
