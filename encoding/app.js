@@ -46,6 +46,14 @@ app.post('/encode', jsonBodyParser,  async (req, res) => {
     .file(messageDataObj.name);
 
     await file.copy('new-copy-buffer-test');
+    
+    // TODO: add encoding functions
+    // On finish, publish to a PubSub topic which gets 'pulled' in the default instance. The default instance removes the original message when it receives a new type=='finished' message
+    // TODO: On finish encoding -> pubsub.topic().publish({finishedMessageId: messageDataObj.id, type: 'finished'})
+    
+    
+    
+    // OLD STORAGE CODE:
 
     // // Array response with 0 The File metadata, 1 The full API response.
     // const [metaData] = await file.getMetadata();
