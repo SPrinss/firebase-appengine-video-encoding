@@ -16,20 +16,15 @@ const pubsubListener = new PubSub();
 const pubsubWorkerTopic = pubsubListener.topic(process.env.TOPIC || 'worker-topic-encode');
 const workerSubscription = pubsubWorkerTopic.subscription(process.env.SUBSCRIPTION || 'worker-encode');
 workerSubscription.on('message', handleReceivedMessage);
-
 // TODO app.get('/_ah/start'...., the server (re)boots. -> Get all messages from subscription and handle each message.
 
+/*
+Handles incoming message event
+*/
 function handleReceivedMessage(message) {
   
-  const messageData = parseMessageToJSON(message)
+  const messageData = parseMessageToJSON(message);
   console.info('receiving message', messageData);
-  /*
-  message.id = ID of the message.
-  message.ackId = ID used to acknowledge the message receival.
-  message.data = Contents of the message.
-  message.attributes = Attributes of the message.
-  message.publishTime = Timestamp when Pub/Sub received the message
-  */
 
   switch(messageData.status) {
 
@@ -47,20 +42,26 @@ function handleReceivedMessage(message) {
     default:
       console.info(`Message finished, deleting from queue: ${messageData.status}`);
       messages.delete(messageData.name);
-      /*
-      If message type is finished, the message is sent from the worker (basic instance: encoding).
+      /* If message type is finished, the message is sent from the worker (basic instance: encoding).
       In the payload of the message, the id of the message that triggered the POST call to the worker is added.
       We use this id to acknowledge the message (removing it from the pubsub).
-      We should also acknowledge the message that is sent from the worker.
-      */
+      We should also acknowledge the message that is sent from the worker. */
       break;
   }
 
 }
 
+/*
+Parses raw message data to JSON object
+*/
 function parseMessageToJSON(message) {
   var data = Buffer.from(message.data, 'base64').toString();
   var json = JSON.parse(data);
+  /* json.id = ID of the message.
+  json.ackId = ID used to acknowledge the message receival.
+  json.data = Contents of the message.
+  json.attributes = Attributes of the message.
+  json.publishTime = Timestamp when Pub/Sub received the message */
   return json;
 }
 
