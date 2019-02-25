@@ -8,7 +8,7 @@ exports.handleNewStorageFile = functions.storage.object().onFinalize(async (obje
   const filePath = 'Neo.svg'; // File path in the bucket.
   const contentType = object.contentType; // File content type.
 
-  // TODO check video
+  // TODO check if type is video
   // if(contentType )
   const pubsub = new PubSub();
   const topicName = 'encode-video-3';
@@ -16,6 +16,7 @@ exports.handleNewStorageFile = functions.storage.object().onFinalize(async (obje
 
   const dataBuffer = Buffer.from(data);
 
+  // TODO publish to a topic with pull subscriptions... not push.
   const messageId = await pubsub.topic(topicName).publish(dataBuffer);
   console.log(`Message ${messageId} published.`);
   
