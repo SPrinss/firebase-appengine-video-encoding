@@ -1,9 +1,3 @@
 dispatch:
   - url: "*/encode"
-    service: encoding
-
-  - url: "*/testing"
-    service: encoding
-
-  - url: "*/testing-post"
-    service: encoding
+    service: media-encoder

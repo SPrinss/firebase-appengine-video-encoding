@@ -1,5 +1,5 @@
 {
-  "name": "video-encode",
+  "name": "media-encoder",
   "description": "Node.js Google App Engine encoding service",
   "version": "0.0.1",
   "private": true,
