@@ -7,10 +7,10 @@ const {PubSub} = require('@google-cloud/pubsub');
 /*
 Init
 */
-const projectId = 'test-video-slices';
+const projectId = 'testing-video-slices';
 const storageBucket = 'testing-video-slices.appspot.com'; // The Storage bucket that contains the file.
 const pubsub = new PubSub();
-const topicName = 'encode-video-3';
+const topicName = 'worker-topic-encode';
 
 /*
 Storage Upload Handler
