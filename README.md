@@ -1,208 +1,68 @@
+## What?
 
-Firebase test project: `testing-video-slices`, 
-For a firebase-to-appengine scaffold see https://github.com/SPrinss/firebase-functions-to-appengine (or use this repo).
+We want to encode a video on an Google Cloud App engine service since the Firebase functions have a short timeout (~540s). 
 
-## If you use this repo:
+Our flow is the following:
+1. A media object is uploaded to the [Firebase Storage](https://console.firebase.google.com/project/testing-video-slices/storage/testing-video-slices.appspot.com/files).
+2. A Firebase function is triggered by the media upload.
+3. The function publishes a message on a PubSub server with `status: new`, the name and the bucket of the file in the payload.
+4. An App Engine server is listening for new messages published to the same PubSub server.
+5. When a new message is obtained, it stores the message in a local Messages JS Map and proceeds with processing the message further. When the message already has been obtained, it's already in the Message Map and therefore ignore (unless it was added to the Messages Map more than 2 hours ago).
+6. The encoding of the media will be done on another App Engine service (the 'media-encoding service'). This service has higher processing power and easily scales on a larger load. We start the service by making a POST request to /encode (we also add a token for security purposes).
+7. The media-encoding service logs the start of the encoding to a file in our [Firestore database](https://console.firebase.google.com/project/testing-video-slices/database/firestore/data~2Fencoding-jobs)
+8. The service processes the encodes the files and overwrites the status in the log in the database.
+9. The service then publishes a message to the same PubSub server we used at the start but the payload has the status 'finished'.
+10. The default service receives the message and removes both the 'new message' and the 'finished message' from the PubSub server and from the messages Map.
 
-1. Clone repo
-2. `npm i` in main and functions folder
-3. `firebase use testing-video-slices` and `gcloud config set project testing-video-slices`
-4. Set env variables: 
+
+## How to test
+
+1. Upload a file in [Firebase storage](https://console.firebase.google.com/project/testing-video-slices/storage/testing-video-slices.appspot.com/files) and wait. Check the metadata of the uploaded file after a while. You can inspect whether the encoding has finished by watching [the Firestore messages](https://console.firebase.google.com/project/testing-video-slices/database/firestore/data~2Fencoding-jobs), although you'd have to guess the message for now (the name of the file is written to the message document). 
+
+## How to check for errors/logs
+
+To see the [logs](https://console.cloud.google.com/appengine/services?project=testing-video-slices) of the App Engine services, click `diagnose -> tools -> logs`.
+
+For [errors](https://console.cloud.google.com/errors?project=testing-video-slices).
+
+## How to test locally
+
+Make sure you've selected the correct gcloud project and firebase project.  
+`gcloud config set project [PROJECT_ID]`
+`firebase use [PROJECT_ID]`
+
+Create processing environment variables by running `export [variable_name]=[value]` in the directory of the app you want to run.
+
+Run `npm start` to start the server. You can make POST calls by running a curl like:
+
 ```
-    export PUBSUB_VERIFICATION_TOKEN=YOUR_TOKEN
-    export PUBSUB_TOPIC=YOUR_TOPIC_NAME
+curl -H "Content-Type: application/json" -i --data @sample_message.json "http://localhost:8080/encode?token=[THE_TOKEN_IN_YOUR_ENVIRONMENT_VARIABLES]"
 ```
-5. To run locally: In one terminal window `npm start`, in the other 
-`
-curl -H "Content-Type: application/json" -i --data @sample_message.json "http://localhost:8080/encode/video?token=randomTokenForYouTodayIsSpecial"
-`
-6. To test on server: `gcloud app deploy app.standard.yaml` (make sure you selected the correct project!), `firebase functions:shell` -> `handleNewStorageFile()`. You can check the [server's logs](https://console.cloud.google.com/logs/viewer) and [errors](https://console.cloud.google.com/errors).
 
-*FYI: The script currently copies the image `Neo.svg` in Storage to `new-copy-buffer-test` in Storage.*
+You can alter the `sample_message.json` file to change the POST data.
 
+OR you can visit the url provided in the console for GET requests.
 
-## To do
-1. Setup worker instance with a long timeout based on route (dispatch.yaml) > See App engine instances
-2. Implement encoder
-3. Create Firebase functions based on Storage write triggers.
+## How to create new Pubsub topics / subscriptions
 
-# Day 1
+*Make sure you have the correct project selected* 
 
-FYI: Google heeft een [pagina](https://cloud.google.com/solutions/media-entertainment/use-cases/video-encoding-transcoding/) speciaal voor video encoding/transcoding maar staat ‘contact sales’.
-
-
-[Google computation stack](https://medium.com/google-cloud/gcp-the-google-cloud-platform-compute-stack-explained-c4ebdccd299b):
-*App engine hoef je niet zelf servers te schalen en met instellingen te kloten. Waarschijnlijk wel wat duurder.*
-
-Bij een [vraag](https://stackoverflow.com/questions/44469537/cloud-functions-for-firebase-completing-long-processes-without-touching-maximum/44472980#44472980) over ‘long-processes’ op Fb-functions zegt de Firebase guru of app-engine of compute-engine: 
-
-Lijkt me dat we voor nu app engine kiezen. [NodeJs docs](https://cloud.google.com/appengine/docs/standard/nodejs/an-overview-of-app-engine)
-
-(Oude) [uitleg](https://medium.com/google-cloud/scalable-video-transcoding-with-app-engine-flexible-621f6e7fdf56) van video transcoding met [app engine](https://github.com/waprin/appengine-transcoder)
-*Note: This is done using Python which might work differently from NodeJs*
-
-Als ik zelf een script probeer te draaien op de App engine:
-- Twee opties: [Standard of Flexible](https://cloud.google.com/appengine/docs/nodejs/)
-(Ik heb standard gekozen)
-
-FYI: Je kan [daily limits](https://cloud.google.com/appengine/docs/standard/nodejs/console/) etc instellen.
-
-# Pubsub
-
-Communicatie methode waarbij je [pull en push](https://cloud.google.com/pubsub/docs/subscriber) methodes hebt. Ik kies voor [push](https://cloud.google.com/pubsub/docs/push) omdat een server hierbij endpoints automatisch called.
-
-Examples:
-[Writing and responding docs](https://cloud.google.com/appengine/docs/standard/nodejs/writing-and-responding-to-pub-sub-messages)
-[NodeJs](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/tree/master/appengine/pubsub)
-
-Npm packages:
-- npm install --save @google-cloud/pubsub
-- npm install --save @google-cloud/storage
-
-# Day 2
-
-## PubSub
-Je hebt een topic waar je een pubsub message heen stuurt.
-Een topic kan meerdere subscribers hebben. Subscribers kunnen zelf pullen, of de pubsub kan naar ze pushen. 
-
-Als je voor push kiest kan je een subscriber aannaken met een endpoint. De pubsub server zal dan een POST request maken naar dat endpoint totdat de endpoint server een HTTP success status code terugstuurt of de deadline verstreken is. 
-
-### Terminal commands
-Select gcloud project id:
-`gcloud config set project [projectId]`
-
-Deploy app:
-`gcloud app deploy app.standard.yaml` (or app.yaml)
-
-Om een nieuw topic aan te maken:
+To create a topic:
 `gcloud pubsub topics create YOUR_TOPIC_NAME`
 
-Om een nieuwe subscription aan te maken
-```
-gcloud pubsub subscriptions create YOUR_SUBSCRIPTION_NAME \
-    --topic YOUR_TOPIC_NAME \
-    --push-endpoint \
-    https://YOUR_PROJECT_ID.appspot.com/pubsub/push?token=YOUR_TOKEN \
-    --ack-deadline 10
-```
-*Waarbij Pubsub/push een voorbeeld is.*
+To create a (pull) subscription:
+`gcloud pubsub subscriptions create YOUR_SUBSCRIPTION_NAME --topic YOUR_TOPIC_NAME`
 
-### Health inspection via console
+## How to deploy
 
-[Logs](https://console.cloud.google.com/logs/viewer)
-appEngine -> Stackdriver -> logs viewer see calls to app and the http response
+Run:
+`gcloud app deploy app.standard.yaml media-encoder/media-encoder.yaml dispatch.yaml`
+*We deploy two instances and a dispatch with this command* 
 
-[Errors](https://console.cloud.google.com/errors)
-App-engine -> stack driver -> error reporting -> see errors within app
-
-[PubSub](console.cloud.google.com/cloudpubsub/)
-See topics. Delete subscriptions. etc.
-
-# Day 3
-
-Might be [good](https://cloud.google.com/pubsub/docs/push) to use the endpoint `_ah/push-handlers/myhandler` (see App Engine Standard Endpoints).
-
-Pubsub publishes using `Buffer` data. 
-
-I.e. 
-```
-const data = JSON.stringify({ name: filePath, bucket: fileBucket });
-
-const dataBuffer = Buffer.from(data);
-
-const messageId = await pubsub.topic(topicName).publish(dataBuffer);
-```
-
-If the pubsub subscriber uses the push method, the endpoint will receive a POST request.
-
-## Running more than one service
-
-[Medium article](https://medium.com/this-dot-labs/node-js-microservices-on-google-app-engine-b1193497fb4b)
-
-[Instances can have different scaling (and timeouts)](https://cloud.google.com/appengine/docs/standard/python/how-instances-are-managed#instance_scaling).
-
-The idea now is to respond quickly to the original PubSub call and 'start up a worker instance'.
-
-## Storage 
-
-Documentation on NodeJs Storage [storage.bucket().file()](https://cloud.google.com/nodejs/docs/reference/storage/2.3.x/File)
-
-App engine file system, only '/tmp' is [writable](https://cloud.google.com/appengine/docs/standard/nodejs/runtime?hl=en&refresh=1)
-
-[App engine & storage example](https://cloud.google.com/appengine/docs/standard/nodejs/using-cloud-storage)
-
-**Important: Bucket name is including .appspot.com**
-
-# Day 4
-
-### Created a sample repo
-
-https://github.com/SPrinss/firebase-functions-to-appengine
-*This is a stripped down version of this repo's code. We can expand on it and publish it together with a Medium article*
-
-### App engine instances
-
-Instances are resident or dynamic. A dynamic instance starts up and shuts down automatically based on the current needs. A resident instance runs all the time, which can improve your application's performance
-
-    Auto scaling services use dynamic instances.
-    Manual scaling services use resident instances.
-    Basic scaling services use dynamic instances.
-
-Each service that you deploy to App Engine behaves like a microservice that independently scales based on how you configured it.
-
-https://cloud.google.com/appengine/docs/standard/nodejs/runtime
-To support Node.js packages that require native extensions, the runtime includes system packages enabling you to use tools such as ImageMagick, FFmpeg, and Chrome headless. See the full list of packages at Included System Packages. To request a package, file an issue in the issue tracker.
-
-The runtime includes a full filesystem. The filesystem is read-only except for the location /tmp, which is a virtual disk storing data in your App Engine instance's RAM. 
-
-https://cloud.google.com/appengine/docs/standard/nodejs/how-requests-are-routed
-With a dispatch file, you can send incoming requests to a specific service based on the path or host name in the request URL.
-
-For example:
-```
-  # Send all work to the one static backend.
-  - url: "*/encode/*"
-    service: static-backend
-```
-
-# Day 5
-
-How to deploy [multiple instances](https://medium.com/this-dot-labs/node-js-microservices-on-google-app-engine-b1193497fb4b) with NodeJs.
-
-The [instance](https://cloud.google.com/appengine/docs/standard/nodejs/how-instances-are-managed) [class type](https://cloud.google.com/appengine/docs/standard/#instance_classes) can be set in [app.yaml](https://cloud.google.com/appengine/docs/standard/nodejs/config/appref).
-
-So, we create a new basic service in `/encode`.
-
-```
-Each service instance is created in response to a start request, which is an empty HTTP GET request to /_ah/start. App Engine sends this request to bring an instance into existence; users cannot send a request to /_ah/start.
-The start request can be used for two purposes:
-
-    To start a program that runs indefinitely, without accepting further requests.
-    To initialize an instance before it receives additional traffic.
-
-When you start an instance of a basic scaling service, App Engine allows it to accept traffic, but the /_ah/start request is not sent to an instance until it receives its first user request    
-```
-
-So, we don't have to do anything with the `/_ah/start` endpoint and can create our own endpoints.
-
- ### So...
- 
-We create a seperate instance in `/encode` which is an automatically scaling basic service (B2).  
-Firebase functions calls are handled in the default service which publishes to another PubSub topic ('worker-encode') and acknowledges the original message. The default server (which is always live) listens to messages pushed to 'worker-encode' and on a new message makes a POST to `/encode/video`. In the dispatch.yaml file we reroute `/encode/video/*` to the `encode` service.
-The 'messageHandler' will postpone the message acknowledge deadline while the background task is running. On finished, the message is finally acknowledged.
-
-```
- Firebase function -> PubSub publish -> AppEngine post endpoint -> publish new topic -> res.status(200)
-
-Listener to new topic -> on message -> set message ‘handling’ ->  make call to /encode (handled in the basic instance) -> wait for response ->  message succes/failure
-```
-Questions: 
-- how to push ack deadline in default endpoint during handling?
-- how to make a post request and wait for the response (which might take 20+ minutes)?
+If you already deployed a service and haven't changed the files of it, don't incorporate it in the deploy call. 
+*Note: The App engine takes up to a few minutes to disable the old services and start the new ones*
 
 
+## How to incorporate into my existing Firebase app?
 
-Questions:
-- Max instances enough for X amount of video's?
-- How to call the basic service (`encode`) from the default service? -> [PubSub for long running tasks](https://cloud.google.com/solutions/using-cloud-pub-sub-long-running-tasks)
-- 
+Just add the files that don't exist in your app and update (be smart about it) the files that do (such as package.json and the functions/index.js files). Select your Gcloud project and deploy the files (see the steps above).
