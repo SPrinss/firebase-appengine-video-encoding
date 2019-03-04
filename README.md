@@ -17,7 +17,7 @@ Our flow is the following:
 
 ## How to test
 
-1. Upload a file in [Firebase storage](https://console.firebase.google.com/project/testing-video-slices/storage/testing-video-slices.appspot.com/files) and wait. Check the metadata of the uploaded file after a while. You can inspect whether the encoding has finished by watching [the Firestore messages](https://console.firebase.google.com/project/testing-video-slices/database/firestore/data~2Fencoding-jobs), although you'd have to guess the message for now (the name of the file is written to the message document). 
+Upload a file in [Firebase storage](https://console.firebase.google.com/project/testing-video-slices/storage/testing-video-slices.appspot.com/files) and wait. Check the metadata of the uploaded file after a while. You can inspect whether the encoding has finished by watching [the Firestore messages](https://console.firebase.google.com/project/testing-video-slices/database/firestore/data~2Fencoding-jobs), although you'd have to guess the message for now (the name of the file is written to the message document). 
 
 ## How to check for errors/logs
 
