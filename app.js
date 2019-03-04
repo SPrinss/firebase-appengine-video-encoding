@@ -8,6 +8,7 @@ const https = require('https');
 const process = require('process'); // Required for mocking environment variables
 const Buffer = require('safe-buffer').Buffer;
 const {PubSub} = require('@google-cloud/pubsub');
+const request = require('request');
 
 /*
 Init
@@ -25,7 +26,6 @@ const messages = new Map(); //A Map is very handy here because we don't like dup
 const pubsubListener = new PubSub();
 const pubsubWorkerTopic = pubsubListener.topic(PUBSUB_TOPIC || 'worker-topic-encode');
 const workerSubscription = pubsubWorkerTopic.subscription(PUBSUB_SUBSCRIPTION || 'worker-encode');
-workerSubscription.on('message', processMessage);
 
 /*
 Create & Start Express Web Server
@@ -34,9 +34,12 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`App listening on port ${PORT}`));
 
-app.get('/_ah/start', _handleServerReboot);
+app.get('/_ah/warmup',_handleServerReboot)
+
+app.get('/_ah/start', function() { workerSubscription.on('message', processMessage) });
 
 async function _handleServerReboot() {
+  console.info('_handleServerReboot')
   const client = new PubSub.v1.SubscriberClient();
 
   const formattedSubscription = client.subscriptionPath(
@@ -62,7 +65,7 @@ Handles incoming message event
 async function processMessage(message) {  
   const messageData = parseMessageToJSON(message.data);
 
-  console.info('New message, ' + message.id + ' status: ' + messageData.status);
+  console.info('New message, ' + message.id + ' status: ' + messageData.status, 'messageData', messageData);
 
   /*
   Pubsub topic receives two statusses of messages, 'new' and 'finished'. 
@@ -148,8 +151,15 @@ async function processNewMessage(messageDataObj, message) {
 async function processFinishedMessage(messageDataObj, message, messagesMap) {
   console.info('Proccessing finished message: ' + message.id + ', taks id: ' + messageDataObj.newMessageId)
   // Acknowledge 'new' message, the message that started the processing
-  await messages[messageDataObj.newMessageId].message.ack();
-  messages.delete(messageDataObj.newMessageId);
+
+  console.log('messages', messages, messageDataObj.newMessageId)
+  const taskMessage = messages.get(messageDataObj.newMessageId);
+  if(taskMessage) {
+    await taskMessage.message.ack();
+    messages.delete(messageDataObj.newMessageId);
+  } else {
+    console.info('Original taks message not in queue, id: ', messageDataObj.newMessageId)
+  }
 
   // Acknowledge 'finished' message, the message that indicates that the processing has been completed
   await message.ack();
@@ -158,35 +168,49 @@ async function processFinishedMessage(messageDataObj, message, messagesMap) {
 }
 
 async function makePostRequest(hostname, path, dataObj) {
+  console.log('\n\n', 'dataObj', dataObj, '\n\n')
+
   console.log('\n\n', 'makePostRequest', hostname, "PATH", path, '\n\n')
   const stringifiedData = JSON.stringify(dataObj);
   console.info('Making POST request: ' + stringifiedData)
-  
-  const options = {
-    hostname: hostname,
-    method: 'POST',
-    path: path,
-    headers: {
-      'Content-Type': "'Content-Type': 'application/json'",
-      'Content-Length': stringifiedData.length
+
+  request.post('https://' + hostname + path, {
+    json: dataObj
+  }, (error, res, body) => {
+    if (error) {
+      console.error(error)
+      return
     }
-  }
+    console.log(`statusCode: ${res.statusCode}`)
+    console.log(body)
+  })
   
-  const req = https.request(options, (res) => {
-    console.log('statusCode:', res.statusCode);
-    console.log('headers:', res.headers);
+  
+  // const options = {
+  //   hostname: hostname,
+  //   method: 'POST',
+  //   path: path,
+  //   headers: {
+  //     'Content-Type': "'Content-Type': 'application/json'",
+  //     'Content-Length': stringifiedData.length
+  //   }
+  // }
+  
+  // const req = https.request(options, (res) => {
+  //   console.log('statusCode:', res.statusCode);
+  //   console.log('headers:', res.headers);
 
-    res.on('data', (d) => {
-      console.log('data: ' + d)
-    });
-  });
+  //   res.on('data', (d) => {
+  //     console.log('data: ' + d)
+  //   });
+  // });
 
-  req.on('error', (e) => {
-    console.error(e);
-  });
+  // req.on('error', (e) => {
+  //   console.error(e);
+  // });
 
-  req.write(stringifiedData);
-  req.end();
+  // req.write(stringifiedData);
+  // req.end();
 }
 
 /*

@@ -14,11 +14,11 @@ const {PubSub} = require('@google-cloud/pubsub');
 
 // The following environment variables are set by app.yaml when running on GAE,
 // but will need to be manually set when running locally.
-const pubsub = new PubSub();
-const pubsubTopic = pubsub.topic(process.env.PUBSUB_TOPIC || 'worker-topic-encode');
+const pubsub = new PubSub({projectId: 'testing-video-slices'});
 const PUBSUB_VERIFICATION_TOKEN = process.env.PUBSUB_VERIFICATION_TOKEN;
-
-
+const PUBSUB_TOPIC = process.env.PUBSUB_TOPIC;
+const topic = pubsub.topic(PUBSUB_TOPIC)
+const pubsubPublisher = topic.publisher()
 
 async function triggerEncoder (req, res) {
   console.info('Encoder method triggered')
@@ -26,19 +26,19 @@ async function triggerEncoder (req, res) {
   if (req.query.token !== PUBSUB_VERIFICATION_TOKEN) return res.status(400).send();
 
   try {
-    const messageData = JSON.parse(req.body);
+    console.log('req.body', req.body)
 
+    const messageData = req.body;
     //mock complex work, set response timeout to 1 minute
-    window.setTimeout(async () => {
+    setTimeout(async () => {
       
-
       // Encoding completed
       const dataToPublish = JSON.stringify({ newMessageId: messageData['newMessageId'], newMessageAckId: messageData['newMessageAckId'], status: "finished"});
       const dataBuffer = Buffer.from(dataToPublish);      
-      await pubsubTopic.publish(dataBuffer);
+      await pubsubPublisher.publish(dataBuffer);
 
       res.status(200).send();
-    }, 1000*60);
+    }, 1000 * 80);
 
   } catch(error) {
     console.error(error);
