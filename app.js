@@ -33,8 +33,9 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`App listening on port ${PORT}`));
 
-app.get('/_ah/start', function() { _handleServerReboot(); workerSubscription.on('message', processMessage) });
-
+// Start listening when the server warms up.
+// If the server reboots, it automatically pulls all existing messages from the PubSub.
+app.get('/_ah/warmup', function() { workerSubscription.on('message', processMessage) });
 
 /*
 Handles incoming message event
