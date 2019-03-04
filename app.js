@@ -16,7 +16,7 @@ Init
 const MAX_PROCESSING_TIME = 1200000;
 const PROJECT_ID = process.env.PROJECT_ID;
 const ENCODING_HOST_NAME = process.env.HOSTNAME;
-const ENCODING_PATH = process.env.PATH + process.env.PUBSUB_VERIFICATION_TOKEN;
+const ENCODING_PATH = process.env.POST_PATH + process.env.PUBSUB_VERIFICATION_TOKEN;
 const PUBSUB_TOPIC = process.env.PUBSUB_TOPIC;
 const PUBSUB_SUBSCRIPTION = process.env.PUBSUB_SUBSCRIPTION
 
@@ -26,6 +26,13 @@ const pubsubListener = new PubSub();
 const pubsubWorkerTopic = pubsubListener.topic(PUBSUB_TOPIC || 'worker-topic-encode');
 const workerSubscription = pubsubWorkerTopic.subscription(PUBSUB_SUBSCRIPTION || 'worker-encode');
 workerSubscription.on('message', processMessage);
+
+/*
+Create & Start Express Web Server
+*/
+const app = express();
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`App listening on port ${PORT}`));
 
 app.get('/_ah/start', _handleServerReboot);
 
@@ -151,6 +158,7 @@ async function processFinishedMessage(messageDataObj, message, messagesMap) {
 }
 
 async function makePostRequest(hostname, path, dataObj) {
+  console.log('\n\n', 'makePostRequest', hostname, "PATH", path, '\n\n')
   const stringifiedData = JSON.stringify(dataObj);
   console.info('Making POST request: ' + stringifiedData)
   
@@ -184,18 +192,11 @@ async function makePostRequest(hostname, path, dataObj) {
 /*
 Parses raw message data to JSON object
 */
-function parseMessageToJSON(message) {
-  var data = Buffer.from(message.data, 'base64').toString();
+function parseMessageToJSON(messageData) {
+  var data = Buffer.from(messageData, 'base64').toString();
   var json = JSON.parse(data);
   return json;
 }
-
-/*
-Create & Start Express Web Server
-*/
-const app = express();
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`App listening on port ${PORT}`));
 
 /*
 Export

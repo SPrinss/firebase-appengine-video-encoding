@@ -32,7 +32,11 @@
       "app": {
         "requiredEnvVars": [
           "PUBSUB_TOPIC",
-          "PUBSUB_VERIFICATION_TOKEN"
+          "PUBSUB_VERIFICATION_TOKEN",
+          "PROJECT_ID",
+          "HOSTNAME",
+          "PATH",
+          "PUBSUB_SUBSCRIPTION"
         ],
         "msg": "Messages received by this instance",
         "substitutions": "YOUR_TOPIC_NAME=$PUBSUB_TOPIC,YOUR_VERIFICATION_TOKEN=$PUBSUB_VERIFICATION_TOKEN"
@@ -40,7 +44,11 @@
       "build": {
         "requiredEnvVars": [
           "PUBSUB_TOPIC",
-          "PUBSUB_VERIFICATION_TOKEN"
+          "PUBSUB_VERIFICATION_TOKEN",
+          "PROJECT_ID",
+          "HOSTNAME",
+          "PATH",
+          "PUBSUB_SUBSCRIPTION"          
         ]
       }
     }
