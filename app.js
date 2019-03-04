@@ -35,26 +35,6 @@ app.listen(PORT, () => console.log(`App listening on port ${PORT}`));
 
 app.get('/_ah/start', function() { _handleServerReboot(); workerSubscription.on('message', processMessage) });
 
-async function _handleServerReboot() {
-  const client = new PubSub.v1.SubscriberClient();
-
-  const formattedSubscription = client.subscriptionPath(
-    PROJECT_ID,
-    PUBSUB_SUBSCRIPTION
-  );
-  const request = {
-    subscription: formattedSubscription,
-    maxMessages: 50,
-  };
-  const [response] = await client.pull(request);
-  console.info('_handleServerReboot, revieving ', response.receivedMessages.length, ' of messages');
-
-  const promises = response.receivedMessages.map( message => {
-    return processMessage(message);
-  })
-
-  return await Promise.all(promises);
-}
 
 /*
 Handles incoming message event
