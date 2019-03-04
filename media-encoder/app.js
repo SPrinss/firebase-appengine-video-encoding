@@ -10,6 +10,7 @@ const Buffer = require('safe-buffer').Buffer;
 const bodyParser = require('body-parser');
 const {Storage} = require('@google-cloud/storage');
 const {PubSub} = require('@google-cloud/pubsub');
+const encodeMediaFile = require('./media-encoder');
 
 
 // The following environment variables are set by app.yaml when running on GAE,
@@ -21,25 +22,25 @@ const topic = pubsub.topic(PUBSUB_TOPIC)
 const pubsubPublisher = topic.publisher()
 
 async function triggerEncoder (req, res) {
-  console.info('Encoder method triggered')
   //thou shalt not pass if no verification token
   if (req.query.token !== PUBSUB_VERIFICATION_TOKEN) return res.status(400).send();
 
   try {
-    console.log('req.body', req.body)
 
     const messageData = req.body;
-    //mock complex work, set response timeout to 1 minute
-    setTimeout(async () => {
-      
-      // Encoding completed
-      const dataToPublish = JSON.stringify({ newMessageId: messageData['newMessageId'], newMessageAckId: messageData['newMessageAckId'], status: "finished"});
-      const dataBuffer = Buffer.from(dataToPublish);      
-      await pubsubPublisher.publish(dataBuffer);
+    
+    console.info('Encoder method triggered, taks id: ', messageData['newMessageId']);
+    const bucket = storage.bucket(messageData.bucket);
+    await encodeMediaFile(messageData.name, bucket);
 
       res.status(200).send();
     }, 1000 * 80);
 
+    const dataToPublish = JSON.stringify({ newMessageId: messageData['newMessageId'], newMessageAckId: messageData['newMessageAckId'], status: "finished"});
+    const dataBuffer = Buffer.from(dataToPublish);
+    await pubsubPublisher.publish(dataBuffer);
+
+    res.status(200).send();
   } catch(error) {
     console.error(error);
     res.status(500).send();
