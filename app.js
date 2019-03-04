@@ -43,7 +43,7 @@ Handles incoming message event
 async function processMessage(message) {  
   const messageData = parseMessageToJSON(message.data);
 
-  console.info('Procssing new message, ' + message.id + ' status: ' + messageData.status);
+  console.info('Processing new message, ' + message.id + ' status: ' + messageData.status);
 
   /*
   Pubsub topic receives two statusses of messages, 'new' and 'finished'. 
