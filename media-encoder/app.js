@@ -12,6 +12,18 @@ const {Storage} = require('@google-cloud/storage');
 const {PubSub} = require('@google-cloud/pubsub');
 const encodeMediaFile = require('./media-encoder');
 
+var firebase = require('firebase');
+var firebaseApp = firebase.initializeApp({ 
+  apiKey: "AIzaSyBI1dA_kYhrAu7bddwNLS5PUqcxVe51Bxo",
+  authDomain: "testing-video-slices.firebaseapp.com",
+  databaseURL: "https://testing-video-slices.firebaseio.com",
+  projectId: "testing-video-slices",
+  storageBucket: "testing-video-slices.appspot.com",
+  messagingSenderId: "751477066988"
+ });
+
+
+const storage = new Storage();
 
 // The following environment variables are set by app.yaml when running on GAE,
 // but will need to be manually set when running locally.
@@ -30,11 +42,13 @@ async function triggerEncoder (req, res) {
     const messageData = req.body;
     
     console.info('Encoder method triggered, taks id: ', messageData['newMessageId']);
+    const docId = await createLogInDb(messageData.newMessageId, messageData.name)
+
     const bucket = storage.bucket(messageData.bucket);
     await encodeMediaFile(messageData.name, bucket);
 
-      res.status(200).send();
-    }, 1000 * 80);
+    await updateLogInDb(docId, 'finished')
+
 
     const dataToPublish = JSON.stringify({ newMessageId: messageData['newMessageId'], newMessageAckId: messageData['newMessageAckId'], status: "finished"});
     const dataBuffer = Buffer.from(dataToPublish);
@@ -42,10 +56,45 @@ async function triggerEncoder (req, res) {
 
     res.status(200).send();
   } catch(error) {
+    await updateLogInDb(docId, 'crashed')
     console.error(error);
     res.status(500).send();
   }
 };
+
+async function createLogInDb(id, name) {
+  const startTime = new Date().getTime();
+  const docRef = await firebaseApp.firestore().collection('encoding-jobs').add({
+    taskId: id,
+    name: name,
+    status: 'encoding',
+    startTime: startTime
+  });
+  
+  const docId = docRef.id;
+
+  return docId
+}
+
+async function updateLogInDb(docId, status) {
+  if(!status) status = "finished";
+  const docData = await getDocDataFromDb('encoding-jobs', docId);
+
+  const endTime = new Date().getTime();
+  const processingDurationInMs = endTime - docData.startTime;
+
+  // merge: true makes sure not to remove keys that aren't set with the call.
+  return await firebaseApp.firestore().collection('encoding-jobs').doc(docId).set({
+    status: status,
+    endTime: endTime,
+    processingDuration: processingDurationInMs
+  }, {merge: true});
+}
+
+async function getDocDataFromDb(collection, docId) {
+  const doc = await firebaseApp.firestore().collection('encoding-jobs').doc(docId).get();
+  return doc.data();
+}
 
 /*
 Create, Init & Start Express Web Server
