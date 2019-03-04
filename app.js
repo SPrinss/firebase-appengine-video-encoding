@@ -4,7 +4,6 @@
 Import Dependencies
 */
 const express = require('express');
-const https = require('https');
 const process = require('process'); // Required for mocking environment variables
 const Buffer = require('safe-buffer').Buffer;
 const {PubSub} = require('@google-cloud/pubsub');
@@ -34,12 +33,9 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`App listening on port ${PORT}`));
 
-app.get('/_ah/warmup',_handleServerReboot)
-
-app.get('/_ah/start', function() { workerSubscription.on('message', processMessage) });
+app.get('/_ah/start', function() { _handleServerReboot(); workerSubscription.on('message', processMessage) });
 
 async function _handleServerReboot() {
-  console.info('_handleServerReboot')
   const client = new PubSub.v1.SubscriberClient();
 
   const formattedSubscription = client.subscriptionPath(
@@ -51,6 +47,7 @@ async function _handleServerReboot() {
     maxMessages: 50,
   };
   const [response] = await client.pull(request);
+  console.info('_handleServerReboot, revieving ', response.receivedMessages.length, ' of messages');
 
   const promises = response.receivedMessages.map( message => {
     return processMessage(message);
@@ -65,7 +62,7 @@ Handles incoming message event
 async function processMessage(message) {  
   const messageData = parseMessageToJSON(message.data);
 
-  console.info('New message, ' + message.id + ' status: ' + messageData.status, 'messageData', messageData);
+  console.info('Procssing new message, ' + message.id + ' status: ' + messageData.status);
 
   /*
   Pubsub topic receives two statusses of messages, 'new' and 'finished'. 
@@ -112,7 +109,6 @@ async function processMessage(message) {
       break;
 
     case 'finished':
-      console.info(`Removing messages to queue`, message.id );
       processFinishedMessage(messageData, message, messages);
       break;
 
@@ -152,7 +148,6 @@ async function processFinishedMessage(messageDataObj, message, messagesMap) {
   console.info('Proccessing finished message: ' + message.id + ', taks id: ' + messageDataObj.newMessageId)
   // Acknowledge 'new' message, the message that started the processing
 
-  console.log('messages', messages, messageDataObj.newMessageId)
   const taskMessage = messages.get(messageDataObj.newMessageId);
   if(taskMessage) {
     await taskMessage.message.ack();
@@ -164,53 +159,18 @@ async function processFinishedMessage(messageDataObj, message, messagesMap) {
   // Acknowledge 'finished' message, the message that indicates that the processing has been completed
   await message.ack();
 
-  console.info("Finished processing " + messageDataObj.name + ". Messages remaining: " + messagesMap.size)
+  console.info("Finished processing " + messageDataObj.newMessageId + ". Messages remaining: " + messagesMap.size)
 }
 
 async function makePostRequest(hostname, path, dataObj) {
-  console.log('\n\n', 'dataObj', dataObj, '\n\n')
-
-  console.log('\n\n', 'makePostRequest', hostname, "PATH", path, '\n\n')
-  const stringifiedData = JSON.stringify(dataObj);
-  console.info('Making POST request: ' + stringifiedData)
-
   request.post('https://' + hostname + path, {
     json: dataObj
   }, (error, res, body) => {
     if (error) {
-      console.error(error)
+      console.error('Error in POST request', error)
       return
     }
-    console.log(`statusCode: ${res.statusCode}`)
-    console.log(body)
   })
-  
-  
-  // const options = {
-  //   hostname: hostname,
-  //   method: 'POST',
-  //   path: path,
-  //   headers: {
-  //     'Content-Type': "'Content-Type': 'application/json'",
-  //     'Content-Length': stringifiedData.length
-  //   }
-  // }
-  
-  // const req = https.request(options, (res) => {
-  //   console.log('statusCode:', res.statusCode);
-  //   console.log('headers:', res.headers);
-
-  //   res.on('data', (d) => {
-  //     console.log('data: ' + d)
-  //   });
-  // });
-
-  // req.on('error', (e) => {
-  //   console.error(e);
-  // });
-
-  // req.write(stringifiedData);
-  // req.end();
 }
 
 /*
