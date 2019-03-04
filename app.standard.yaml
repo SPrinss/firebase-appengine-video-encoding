@@ -17,8 +17,8 @@ runtime: nodejs10
 # [START gae_pubsub_yaml]
 env_variables:
   PROJECT_ID: testing-video-slices
-  HOSTNAME: https://https://testing-video-slices.appspot.com/
-  PATH: encode?token=
+  HOSTNAME: testing-video-slices.appspot.com
+  POST_PATH: /encode?token=
   PUBSUB_TOPIC: worker-topic-encode
   PUBSUB_SUBSCRIPTION: worker-encode
   # This token is used to verify that requests originate from your
