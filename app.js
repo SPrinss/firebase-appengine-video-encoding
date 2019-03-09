@@ -91,7 +91,6 @@ async function processMessage(message) {
 
 function processingOverdue(storedMessageDataObj) {
   // The encoding job is still running and the message shouldn't be processed further.
-  // TODO you don't want to run it 5+ times
   if(storedMessageDataObj.status == "running" && storedMessageDataObj['processingStartTime'] < new Date().getTime() - MAX_PROCESSING_TIME) return true;
   return false;
 }
