@@ -30,8 +30,8 @@ const storage = new Storage();
 const pubsub = new PubSub({projectId: 'testing-video-slices'});
 const PUBSUB_VERIFICATION_TOKEN = process.env.PUBSUB_VERIFICATION_TOKEN;
 const PUBSUB_TOPIC = process.env.PUBSUB_TOPIC;
-const topic = pubsub.topic(PUBSUB_TOPIC)
-const pubsubPublisher = topic.publisher()
+const topic = pubsub.topic(PUBSUB_TOPIC);
+const pubsubPublisher = topic.publisher();
 const databaseLogCollectionName = "encoding-jobs";
 
 async function triggerEncoder (req, res) {
