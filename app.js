@@ -25,6 +25,22 @@ const messages = new Map(); //A Map is very handy here because we don't like dup
 const pubsubListener = new PubSub();
 const pubsubWorkerTopic = pubsubListener.topic(PUBSUB_TOPIC || 'worker-topic-encode');
 const workerSubscription = pubsubWorkerTopic.subscription(PUBSUB_SUBSCRIPTION || 'worker-encode');
+/*
+Pubsub topic receives two statusses of messages, 'new' and 'finished'. 
+The 'new' message is sent to trigger and encoding job, the 'finished' message is sent when an encoding job is succesfully completed.
+This `app.js` is run on an automatic instance App Engine, meaning it's always live (unless the server crashes and reboots).
+
+The flow of messages:
+1. The App Engine instance boots and starts a listener to the PubSub topic.
+2. An external service wants the App engine to encode a video and posts a message to the Pubsub topic.
+3. The App Engine listener receives the 'new' message and adds this message to the messages map. Additionally it starts the encoding job (see 'Encoding job'), the payload includes the original message id.
+4. The encoding server finishes the encoding and publishes a 'finished' message to the PubSub, the payload includes the message id that triggered the encoding job.
+5. The App Engine listener receives the 'finished' message and removes both the 'finished' message and the 'new' message (that triggered the encoding job) from the messages map. Additionally it acknowledges both messages on the PubSub server.
+Note: We use a messages map to handle incoming message events properly (e.g. an ecoding job is still running, the incoming message should be ignored).
+
+The listener only receives a message once, meaning that if the encoding job failed, it won't automatically be started again. The failure will be logged in the database (unless the server randomly crashes, then the status will stay 'encoding').
+If the default app engine (this script) crashes, it will automatically obtain all messages of encoding jobs that haven't been acknowledged yet and that the encoding jobs.
+*/
 
 /*
 Create & Start Express Web Server
@@ -44,32 +60,6 @@ async function processMessage(message) {
   const messageData = parseMessageToJSON(message.data);
 
   console.info('Processing new message, ' + message.id + ' status: ' + messageData.status);
-
-  /*
-  Pubsub topic receives two statusses of messages, 'new' and 'finished'. 
-  The 'new' message is sent to trigger and encoding job, the 'finished' message is sent when an encoding job is succesfully completed.
-  This `app.js` is run on an automatic instance App Engine, meaning it's always live (unless the server crashes and reboots).
-  
-  The flow of messages:
-  1. The App Engine instance boots and starts a listener to the PubSub topic.
-  2. An external service wants the App engine to encode a video and posts a message to the Pubsub topic.
-  3. The App Engine listener receives the 'new' message and adds this message to the messages map. Additionally it starts the encoding job (see 'Encoding job'), the payload includes the orinigal message id.
-  4. The encoding server finishes the encoding and publishes a 'finished' message to the PubSub, the payload includes the message id that triggered the encoding job.
-  5. The App Engine listener receives the 'finished' message and removes both the 'finished' message and the 'new' message (that triggered the encoding job) from the messages map. Additionally it acknowledges both messages on the PubSub server.
-  Note: We use a messages map to handle incoming message events properly (e.g. an ecoding job is still running, the incoming message should be ignored).
-
-  Scenarios:
-  1. The App Engine listener receives the 'new' message again: 
-    - The encoding job is still running
-    - The encoding job has failed
-    - The encoding job is finished (this shouldn't happen since the message should've been removed)
-
-    2. The encoding job fails:
-    - The server crashes and doesn't send a status code
-    - The server sends an error code
-
-    3.  
-  */
   
   switch(messageData.status) {
 
