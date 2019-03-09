@@ -43,7 +43,7 @@ async function triggerEncoder (req, res) {
     const messageData = req.body;
     
     console.info('Encoder method triggered, taks id: ', messageData['newMessageId']);
-    const docId = await createLogInDb(messageData.newMessageId, messageData.name)
+    const docId = await createLogInDb(messageData.newMessageId, messageData.name, messageData.size)
 
     const bucket = storage.bucket(messageData.bucket);
     await encodeMediaFile(messageData.name, bucket);
@@ -63,11 +63,12 @@ async function triggerEncoder (req, res) {
   }
 };
 
-async function createLogInDb(id, name) {
+async function createLogInDb(id, name, size) {
   const startTime = new Date().getTime();
   const docRef = await firebaseApp.firestore().collection(databaseLogCollectionName).add({
     taskId: id,
     name: name,
+    size: size,
     status: 'encoding',
     startTime: startTime
   });

@@ -31,6 +31,7 @@ async function handleFileUpload(object) {
 
       console.info(`Ignoring file with mime type ${object.contentType}.`);
       break;
+    const data = JSON.stringify({ name: object.name, bucket: object.bucket, size: object.size, projectId: projectId, status: "new"});
   }
 }
 
