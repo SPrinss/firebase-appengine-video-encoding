@@ -14,7 +14,6 @@ Init
 */
 // Max processing time is two hours.
 const MAX_PROCESSING_TIME = 1200000;
-const PROJECT_ID = process.env.PROJECT_ID;
 const ENCODING_HOST_NAME = process.env.HOSTNAME;
 const ENCODING_PATH = process.env.POST_PATH + process.env.PUBSUB_VERIFICATION_TOKEN;
 const PUBSUB_TOPIC = process.env.PUBSUB_TOPIC;
