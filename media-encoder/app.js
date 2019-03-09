@@ -48,8 +48,7 @@ async function triggerEncoder (req, res) {
     const bucket = storage.bucket(messageData.bucket);
     await encodeMediaFile(messageData.name, bucket);
 
-    await updateLogInDb(docId, 'finished')
-
+    await updateStatusInDb(docId, 'finished')
 
     const dataToPublish = JSON.stringify({ newMessageId: messageData['newMessageId'], newMessageAckId: messageData['newMessageAckId'], status: "finished"});
     const dataBuffer = Buffer.from(dataToPublish);
@@ -57,7 +56,7 @@ async function triggerEncoder (req, res) {
 
     res.status(200).send();
   } catch(error) {
-    await updateLogInDb(docId, 'crashed')
+    await updateStatusInDb(docId, 'crashed')
     console.error(error);
     res.status(500).send();
   }
@@ -78,7 +77,7 @@ async function createLogInDb(id, name, size) {
   return docId
 }
 
-async function updateLogInDb(docId, status) {
+async function updateStatusInDb(docId, status) {
   if(!status) status = "finished";
   // Get the document to get the starttime of the job.
   const docData = await getDocDataFromDb(databaseLogCollectionName, docId);
