@@ -29,13 +29,16 @@ async function encodeMediaFile(filePath, bucket) {
     console.info('downloading...', tempFilePath);
     await downloadFile(file, tempFilePath);
 
+    let mediaMimeType = '';
     //encode file
     if(fileData.contentType.match('video')) {
       console.info('encoding video');
+      mediaMimeType = "video/mp4";
       var outputPath = await encodeVideo(tempFilePath, fileName);
     }
     else if(fileData.contentType.match('audio')) {
       console.info('encoding audio');
+      mediaMimeType = "audio/mp3";
       var outputPath = await encodeAudio(tempFilePath, fileName);
     } else {
       console.info('file type not supported for encoding');
@@ -45,7 +48,7 @@ async function encodeMediaFile(filePath, bucket) {
     //re-upload file
     console.info('done encoding, uploading', outputPath, filePath);
     let newMetaData = Object.assign(fileData.metadata || {}, {encoded: true});
-    await STORAGE_BUCKET.upload(outputPath, { resumable: false, destination: filePath, metadata: { contentType: fileData.contentType, metadata: newMetaData } });
+    await STORAGE_BUCKET.upload(outputPath, { resumable: false, destination: filePath, metadata: { contentType: mediaMimeType, metadata: newMetaData } });
 
     //wrapping up
     console.info('done uploading');
