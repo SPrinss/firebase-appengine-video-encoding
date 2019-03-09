@@ -32,6 +32,7 @@ const PUBSUB_VERIFICATION_TOKEN = process.env.PUBSUB_VERIFICATION_TOKEN;
 const PUBSUB_TOPIC = process.env.PUBSUB_TOPIC;
 const topic = pubsub.topic(PUBSUB_TOPIC)
 const pubsubPublisher = topic.publisher()
+const databaseLogCollectionName = "encoding-jobs";
 
 async function triggerEncoder (req, res) {
   //thou shalt not pass if no verification token
@@ -64,7 +65,7 @@ async function triggerEncoder (req, res) {
 
 async function createLogInDb(id, name) {
   const startTime = new Date().getTime();
-  const docRef = await firebaseApp.firestore().collection('encoding-jobs').add({
+  const docRef = await firebaseApp.firestore().collection(databaseLogCollectionName).add({
     taskId: id,
     name: name,
     status: 'encoding',
@@ -78,13 +79,14 @@ async function createLogInDb(id, name) {
 
 async function updateLogInDb(docId, status) {
   if(!status) status = "finished";
-  const docData = await getDocDataFromDb('encoding-jobs', docId);
+  // Get the document to get the starttime of the job.
+  const docData = await getDocDataFromDb(databaseLogCollectionName, docId);
 
   const endTime = new Date().getTime();
   const processingDurationInMs = endTime - docData.startTime;
 
   // merge: true makes sure not to remove keys that aren't set with the call.
-  return await firebaseApp.firestore().collection('encoding-jobs').doc(docId).set({
+  return await firebaseApp.firestore().collection(databaseLogCollectionName).doc(docId).set({
     status: status,
     endTime: endTime,
     processingDuration: processingDurationInMs
@@ -92,7 +94,8 @@ async function updateLogInDb(docId, status) {
 }
 
 async function getDocDataFromDb(collection, docId) {
-  const doc = await firebaseApp.firestore().collection('encoding-jobs').doc(docId).get();
+  if(!collection) collection = databaseLogCollectionName;
+  const doc = await firebaseApp.firestore().collection(collection).doc(docId).get();
   return doc.data();
 }
 
