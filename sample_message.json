@@ -1,11 +1,9 @@
 { 
-  "message" : {
-      "name": "Neo.svg",
-      "bucket": "testing-video-slices.appspot.com",
-      "projectId": "testing-video-slices",
-      "status": "running",
-      "processingStartTime": 1551687012319,
-      "newMessageId": "214522926094788",
-      "newMessageAckId": "Pn4gPEVBXkASTCsJRElTK0MLKlgRTgQhIT4wPkVTRFAGFixdRkhRNxkIaFEOT14jPzUgKEUWIysQCWNdNBsNaFxcdAFYDk0gfmcmOwgZAQhFe059ZBkMbFledw5TCxl7eWZ9YnLelOqMmKdCZh09WBJLLA"
-  }
+  "name": "mov_bbb.mp4",
+  "bucket": "testing-video-slices.appspot.com",
+  "projectId": "testing-video-slices",
+  "status": "running",
+  "processingStartTime": 1551687012319,
+  "newMessageId": "214522926094788",
+  "newMessageAckId": "Pn4gPEVBXkASTCsJRElTK0MLKlgRTgQhIT4wPkVTRFAGFixdRkhRNxkIaFEOT14jPzUgKEUWIysQCWNdNBsNaFxcdAFYDk0gfmcmOwgZAQhFe059ZBkMbFledw5TCxl7eWZ9YnLelOqMmKdCZh09WBJLLA"
 }
