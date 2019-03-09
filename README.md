@@ -1,29 +1,37 @@
 ## Questions remaining, to test:
 
 1. The 'media-encoding' service is now running a class B8 instance (the most expensive, at 0,40$/hour). The default instance now has a `min_instances` and a `min_idle_instances` of 1 to make sure it never 'sleeps'. Additionally we make use of the 'warmup' service in the default instance which might also [costs more](https://cloud.google.com/appengine/docs/standard/java/configuring-warmup-requests). Not sure what the costs will be. 
+**Answer: Default service (incl. warmup) doesn't seem to cost anything if it's unused. We can fiddle with the class of the 'encoding instance' at a later point.**
 
 2. Is the 'default' instance always online?
+**Answer, tested twice in a week, both times the instance was active and instantly reactive.**
 
 3. What if multiple instances of the default service are loaded, do they have different messages Maps ? If so, files could be encoded multiple times.
+**Haven't tested yet.**
 
-4. How often is the subscription.on('message') triggered for existing messages? (if it boots, it receives all messages and if a new message is published, it receives that message, but what happens to existing non-acknoledged messages?)
+4. How often is the subscription.on('message') triggered for existing messages? (if it boots, it receives all messages and if a new message is published, it receives that message, but what happens to existing non-acknowledged messages?)
+**The listener doesn't seem to receive the same message more than once. Which means something else must check whether encoding jobs have failed. Mini dashboard?**
 
 5. What happens on a large server load? -> will the 'media-encoding' service spin up more servers? (it should). 
 6. How big does the load have to be before the default service needs load balancing?
+**Haven't tested yet. Idea: Run the Firebase function locally 10times in short succesion, each triggering an encoding job of a file of 150mb.**
 
 7. Why doesn't the `_ah/start` work? We use the `_ah/warmup` now, but the `start` would make more sense since it's simpler. 
+**Doesn't matter at the moment. The flow works well with warmup and it doesn't cost more.**
 
 ## TODO
 
 1. object().onFinalize -> check metadata, if encoded, ignore. (otherwise we'll try to encode the just encoded media)
+**Done**
 
 2. STORAGE_BUCKET.upload -> contentType is always .mp4 (or .mp3?), so we can't use the file's content type.
+**Done, but could definetely be improved.**
 
 3. If a file can't be encoded for some reason, the 'task message' will remain in the PubSub server for 7 days. This could trigger a lot of failed encodings.
+**The listener doesn't seem to receive the same message more than once.**
 
 4. Only audio/mp3 and video/mp4 are handled in the Firebase function at the moment. Extend to other filetypes.
-
-5. Run through all scenario's. Are exceptions handled?
+**Done, I check for Mime type: video/audio.**
 
 ## What?
 
